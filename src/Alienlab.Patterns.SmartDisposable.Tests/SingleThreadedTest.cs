@@ -1,5 +1,6 @@
 ﻿namespace Alienlab.Patterns
 {
+  using System;
   using System.Threading;
   using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -11,64 +12,91 @@
     {
       var owner = new Owner();
 
+      Context contextA;
+
       // first attempt - should be the same
-      var context1 = owner.CreateContext();
-      var contextA = context1;
-      Assert.AreEqual(contextA, context1); // obviously
+      using (var context1 = owner.CreateContext())
+      {
+        contextA = context1;
+        Assert.AreEqual(contextA, context1); // obviously
+
+        Assert.IsFalse(contextA.Disposed);
+        contextA.AddUser();
+        Assert.IsFalse(contextA.Disposed);
+      }
 
       Assert.IsFalse(contextA.Disposed);
-      contextA.AddUser();
-      Assert.IsFalse(contextA.Disposed);
-      
+
       // second attempt - should be the same
-      var context2 = owner.CreateContext();
-      Assert.AreEqual(contextA, context2);
+      using (var context2 = owner.CreateContext())
+      {
+        Assert.AreEqual(contextA, context2);
 
-      Assert.IsFalse(contextA.Disposed);
-      contextA.AddUser();
+        Assert.IsFalse(contextA.Disposed);
+        contextA.AddUser();
+        Assert.IsFalse(contextA.Disposed);
+      }
+
       Assert.IsFalse(contextA.Disposed);
 
       // third attempt - should be the same
-      var context3 = owner.CreateContext();
-      Assert.AreEqual(contextA, context3);
+      using (var context3 = owner.CreateContext())
+      {
+        Assert.AreEqual(contextA, context3);
 
-      Assert.IsFalse(contextA.Disposed);
-      contextA.AddUser();
+        Assert.IsFalse(contextA.Disposed);
+        contextA.AddUser();
+        Assert.IsFalse(contextA.Disposed);
+      }
+
       Assert.IsTrue(contextA.Disposed); // disposed!
 
+      Context contextB;
+
       // fourth attempt - should be new!
-      var context4 = owner.CreateContext();
-      Assert.AreNotEqual(contextA, context4);
+      using (var context4 = owner.CreateContext())
+      {
+        Assert.AreNotEqual(contextA, context4);
 
-      var contextB = context4;
-      Assert.AreEqual(contextB, context4); // obviously
+        contextB = context4;
+        Assert.AreEqual(contextB, context4); // obviously
 
-      Assert.IsFalse(contextB.Disposed);
-      contextB.AddUser();
+        Assert.IsFalse(contextB.Disposed);
+        contextB.AddUser();
+        Assert.IsFalse(contextB.Disposed);
+      }
+
       Assert.IsFalse(contextB.Disposed);
 
       // fifth attempt - should be the same as fourth
-      var context5 = owner.CreateContext();
-      Assert.AreEqual(contextB, context5);
+      using (var context5 = owner.CreateContext())
+      {
+        Assert.AreEqual(contextB, context5);
 
-      Assert.IsFalse(contextB.Disposed);
-      context5.AddUser();
-      Assert.IsFalse(contextB.Disposed);
+        Assert.IsFalse(contextB.Disposed);
+        contextB.AddUser();
+        Assert.IsFalse(contextB.Disposed);
+      }
 
       // sixth attempt - should be the same as fifth
-      var context6 = owner.CreateContext();
-      Assert.AreEqual(contextB, context6);
+      using (var context6 = owner.CreateContext())
+      {
+        Assert.AreEqual(contextB, context6);
 
-      Assert.IsFalse(contextB.Disposed);
-      context6.AddUser();
+        Assert.IsFalse(contextB.Disposed);
+        contextB.AddUser();
+        Assert.IsFalse(contextB.Disposed);
+      }
+
       Assert.IsTrue(contextB.Disposed); // disposed!
     }
 
-    private class Context : SmartDisposable
+    internal class Context : SmartDisposable, IDisposable
     {
       private int UsersCount;
 
-      public Context(SmartDisposableOwner owner) : base(owner)
+      public Context(SmartDisposableOwner owner)
+        : base(owner)
       {
       }
 
@@ -77,7 +105,10 @@
       public void AddUser()
       {
         Interlocked.Increment(ref this.UsersCount);
+      }
 
+      public void Dispose()
+      {
         this.TryDispose();
       }
 
@@ -92,9 +123,9 @@
       }
     }
 
-    private class Owner : SmartDisposableOwner
+    internal class Owner : SmartDisposableOwner
     {
-      public Context CreateContext()
+      internal Context CreateContext()
       {
         return (Context)this.GetOrCreateSmartDispoable();
       }
@@ -102,6 +133,11 @@
       protected override SmartDisposable CreateSmartDisposable()
       {
         return new Context(this);
+      }
+
+      protected override void LogError(string message)
+      {
+        throw new InvalidOperationException(message);
       }
     }
   }

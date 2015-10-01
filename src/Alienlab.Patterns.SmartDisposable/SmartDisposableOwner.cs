@@ -1,6 +1,7 @@
 ﻿namespace Alienlab.Patterns
 {
   using System;
+  using System.Diagnostics;
 
   public abstract class SmartDisposableOwner
   {
@@ -15,6 +16,11 @@
       {
         this.Cache = null;
       }
+    }
+
+    protected internal virtual void LogError(string message)
+    {
+      Debug.WriteLine(message ?? string.Empty);
     }
 
     /// <summary>
@@ -46,7 +52,7 @@
 
         this.Cache = newSmartDisposable;
 
-        return newSmartDisposable;
+        return newSmartDisposable.IncrementUsageCounter();
       }
     }
 

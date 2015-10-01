@@ -1,15 +1,12 @@
 ﻿namespace Alienlab.Patterns
 {
-  using System.Diagnostics;
   using System.Threading;
 
-  public abstract class SmartDisposable 
+  public abstract class SmartDisposable
   {
     private readonly SmartDisposableOwner Owner;
 
     private int HoldersCounter;
-
-    private int ExpectedCommitsCounter;
 
     private bool IsDisposed;
 
@@ -20,7 +17,7 @@
 
     internal SmartDisposable IncrementUsageCounter()
     {
-      Interlocked.Increment(ref this.ExpectedCommitsCounter);
+      Interlocked.Increment(ref this.HoldersCounter);
 
       return this;
     }
@@ -28,14 +25,14 @@
     protected abstract bool CanStartDisposal();
 
     protected abstract void OnDisposed();
-
-    protected virtual void LogError(string message)
-    {
-      Debug.WriteLine(message);
-    }
-
+    
+    /// <summary>
+    /// Checks and disposes if it is right time to do so (according to this.CanStartDisposal).
+    /// </summary>
     protected void TryDispose()
     {
+      Interlocked.Decrement(ref this.HoldersCounter);
+
       if (!this.CanStartDisposal())
       {
         return;
@@ -44,10 +41,10 @@
       // disposing has started so we need to prevent this instance from being obtained in new places
       this.Owner.InvalidateCache(this);
 
-      if (this.HoldersCounter < 0 || this.ExpectedCommitsCounter < 0)
+      if (this.HoldersCounter < 0)
       {
         // correct implementation of this library must make this situation impossible
-        this.LogError(string.Format("[IntervalCommitLuceneUpdateContext] One of counters went below zero. Holders: {0}, Commits: {1}", this.HoldersCounter, this.ExpectedCommitsCounter));
+        this.Owner.LogError(string.Format("Holders counter went below zero: {0}", this.HoldersCounter));
 
         return;
       }
@@ -59,7 +56,7 @@
         return;
       }
 
-      if (this.HoldersCounter != 0 && this.ExpectedCommitsCounter != 0)
+      if (Interlocked.CompareExchange(ref this.HoldersCounter, 0, 0) != 0)
       {
         // still is in use, must be disposed later
         return;
@@ -74,8 +71,6 @@
         }
 
         this.IsDisposed = true;
-
-        Interlocked.Decrement(ref this.HoldersCounter);
       }
 
       this.OnDisposed();
