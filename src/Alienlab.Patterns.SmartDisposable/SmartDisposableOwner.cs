@@ -18,11 +18,6 @@
       }
     }
 
-    protected internal virtual void LogError(string message)
-    {
-      Debug.WriteLine(message ?? string.Empty);
-    }
-
     /// <summary>
     /// Gets SmartDisposable object from cache if disposal conditions are not satisfied, otherwise creates new one.
     /// </summary>

@@ -96,7 +96,7 @@
       private int UsersCount;
 
       public Context(SmartDisposableOwner owner)
-        : base(owner)
+        : base(owner, new TimeSpan(0, 0, 1))
       {
       }
 
@@ -109,6 +109,7 @@
 
       public void Dispose()
       {
+        this.Release();
         this.TryDispose();
       }
 
@@ -133,11 +134,6 @@
       protected override SmartDisposable CreateSmartDisposable()
       {
         return new Context(this);
-      }
-
-      protected override void LogError(string message)
-      {
-        throw new InvalidOperationException(message);
       }
     }
   }

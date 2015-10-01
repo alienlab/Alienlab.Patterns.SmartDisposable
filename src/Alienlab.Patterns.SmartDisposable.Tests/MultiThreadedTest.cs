@@ -78,7 +78,7 @@
       private int UsersCount;
 
       public Context(SmartDisposableOwner owner)
-        : base(owner)
+        : base(owner, new TimeSpan(0, 0, 2))
       {
       }
 
@@ -91,12 +91,14 @@
 
       public void Dispose()
       {
+        this.Release();
         this.TryDispose();
       }
 
       protected override bool CanStartDisposal()
       {
-        return this.UsersCount >= Environment.ProcessorCount * LoopsCount;
+        var num = Environment.ProcessorCount * LoopsCount;
+        return Interlocked.CompareExchange(ref this.UsersCount, num, num) == num;
       }
 
       protected override void OnDisposed()
@@ -132,12 +134,7 @@
         }
 
         return smartDisposable;
-      }
-
-      protected override void LogError(string message)
-      {
-        throw new InvalidOperationException(message);
-      }
+      }      
     }
   }
 }
