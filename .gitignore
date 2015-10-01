@@ -1,0 +1,7 @@
+.vs/
+*.user
+*.suo
+src/Alienlab.Patterns.SmartDisposable.Tests/bin/
+src/Alienlab.Patterns.SmartDisposable.Tests/obj/
+src/Alienlab.Patterns.SmartDisposable/obj/
+src/Alienlab.Patterns.SmartDisposable/bin/
